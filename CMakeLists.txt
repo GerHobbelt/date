@@ -65,16 +65,11 @@ target_include_directories( date INTERFACE
     $<INSTALL_INTERFACE:include> )
 # adding header sources just helps IDEs
 target_sources( date INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>$<INSTALL_INTERFACE:include>/date/date.h
-    # the rest of these are not currently part of the public interface of the library:
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/date/solar_hijri.h>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/date/islamic.h>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/date/iso_week.h>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/date/julian.h>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>$<INSTALL_INTERFACE:include>/date
 )
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.15)
     # public headers will get installed:
-    set_target_properties( date PROPERTIES PUBLIC_HEADER include/date/date.h )
+    set_target_properties( date PROPERTIES PUBLIC_HEADER "include/date/date.h;include/date/iso_week.h")
 endif ()
 target_compile_definitions( date INTERFACE
     #To workaround libstdc++ issue https://github.com/HowardHinnant/date/issues/388
