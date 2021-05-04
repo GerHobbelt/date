@@ -1,5 +1,9 @@
 include( CMakeFindDependencyMacro )
 include( "${CMAKE_CURRENT_LIST_DIR}/dateTargets.cmake" )
+if( TARGET date::date-tz ) # fix that
+    find_dependency( BatTzdata REQUIRED)    
+endif()
+
 if( NOT MSVC AND TARGET date::date-tz )
     find_dependency( Threads REQUIRED)
     get_target_property( _tzill date::date-tz  INTERFACE_LINK_LIBRARIES )

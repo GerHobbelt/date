@@ -156,6 +156,21 @@ if( BUILD_TZ_LIB )
         target_include_directories( date-tz SYSTEM PRIVATE ${CURL_INCLUDE_DIRS} )
         target_link_libraries( date-tz PRIVATE ${CURL_LIBRARIES} )
     endif( )
+    # Barco audio adaption start
+    if( MANUAL_TZ_DB )
+        find_package( BatTzdata )
+        if (TARGET battzdata::battzdata)
+            message(STATUS "Using install path of battzdata::battzdata ")
+            # Imports INSTALL= define
+            target_link_libraries( date-tz PRIVATE battzdata::battzdata) 
+            # Lets provide some infos to downstream targets
+            target_compile_definitions( date-tz PUBLIC USE_BAT_TZDATA=1 )
+        else()
+          message(STATUS "BatTzdata not found,")
+        endif()
+    endif( )
+    # Barco audio adaption end
+
 endif( )
 
 #[===================================================================[
