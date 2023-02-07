@@ -91,6 +91,13 @@ namespace date
 // Configuration |
 //---------------+
 
+#if defined(RTC) //RTC Configuration, We undef any settings set by default by the library.
+#  ifdef INSTALL
+#    undef INSTALL
+#  endif//INSTALL
+#  define INSTALL ""
+#endif
+
 #ifndef ONLY_C_LOCALE
 #  define ONLY_C_LOCALE 0
 #endif

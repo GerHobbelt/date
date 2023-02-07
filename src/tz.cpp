@@ -29,7 +29,10 @@
 // Our apologies.  When the previous paragraph was written, lowercase had not yet
 // been invented (that would involve another several millennia of evolution).
 // We did not mean to shout.
-
+#ifdef RTC
+#  include "date/embedded_data_file.h"
+#  include "date/ptz.h"
+#endif
 #ifdef _WIN32
    // windows.h will be included directly and indirectly (e.g. by curl).
    // We need to define these macros to prevent windows.h bringing in
@@ -92,7 +95,7 @@
 #  define TARGET_OS_SIMULATOR 0
 #endif
 
-#if USE_OS_TZDB
+#if USE_OS_TZDB && !defined(RTC)
 #  include <dirent.h>
 #endif
 #include <algorithm>
@@ -491,9 +494,9 @@ parse_month(std::istream& in)
     return static_cast<unsigned>(++m);
 }
 
-#if !USE_OS_TZDB
+#if !USE_OS_TZDB || defined(RTC) // We need some this sections logic to sort mappings
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(RTC)//We use this logic on all platforms now.
 
 static
 void
@@ -521,7 +524,6 @@ sort_zone_mappings(std::vector<date::detail::timezone_mapping>& mappings)
     });
 }
 
-static
 bool
 native_to_standard_timezone_name(const std::string& native_tz_name,
                                  std::string& standard_tz_name)
@@ -559,8 +561,8 @@ load_timezone_mappings_from_xml_file(const std::string& input_path)
     std::vector<detail::timezone_mapping> mappings;
     std::string line;
 
-    std::ifstream is(input_path);
-    if (!is.is_open())
+    auto is = get_windowsZonesXML_file();
+    if (false) //Our filestream must exist, we can't check if it is open
     {
         // We don't emit file exceptions because that's an implementation detail.
         std::string msg = "Error opening time zone mapping file \"";
@@ -697,12 +699,14 @@ load_timezone_mappings_from_xml_file(const std::string& input_path)
         }
     }
 
-    is.close();
+    //is.close(); Our stream cannot be closed, because it is not a file stream. 
     return mappings;
 }
 
-#endif  // _WIN32
+#endif  // _WIN32 
+#endif //!USE_OS_TZDB
 
+#if !USE_OS_TZDB
 // Parsing helpers
 
 static
@@ -2034,6 +2038,7 @@ time_zone::load_data(std::istream& inf,
     }
     for (auto j = 0u; i < transitions_.size(); ++i, ++j)
         transitions_[i].info = ttinfos_.data() + indices[j];
+    inf >> posix_timezone_; //The final entry in a TZIF file is a null terminated posix string
 }
 
 void
@@ -2041,9 +2046,9 @@ time_zone::init_impl()
 {
     using namespace std;
     using namespace std::chrono;
-    auto name = get_tz_dir() + ('/' + name_);
-    std::ifstream inf(name);
-    if (!inf.is_open())
+    auto name = name_;//get_tz_dir() + ('/' + name_); //We don't load the TZ from file anymore, we only need the name.
+    auto inf = get_stream(name);
+    if (false)//get_stream will error if it cannot open the file. 
         throw std::runtime_error{"Unable to open " + name};
     inf.exceptions(std::ios::failbit | std::ios::badbit);
     load_header(inf);
@@ -2121,22 +2126,24 @@ time_zone::init() const
 }
 
 sys_info
-time_zone::load_sys_info(std::vector<detail::transition>::const_iterator i) const
+time_zone::load_sys_info(std::vector<detail::transition>::const_iterator i, sys_seconds tp) const
 {
+    auto load_posix_info = [&](){auto tz = Posix::time_zone{ posix_timezone_ }.get_info(tp); if (tz.begin < transitions_.back().timepoint){tz.begin = transitions_.back().timepoint;} return tz;};
     using namespace std::chrono;
     assert(!transitions_.empty());
     sys_info r;
+    if (i == transitions_.cend()) return load_posix_info();
     if (i != transitions_.begin())
     {
         r.begin = i[-1].timepoint;
-        r.end = i != transitions_.end() ? i->timepoint :
-                                          sys_seconds(sys_days(year::max()/max_day));
+        r.end = i->timepoint;
         r.offset = i[-1].info->offset;
         r.save = i[-1].info->is_dst ? minutes{1} : minutes{0};
         r.abbrev = i[-1].info->abbrev;
     }
     else
     {
+        if (i + 1 == transitions_.cend()) return load_posix_info();
         r.begin = sys_days(year::min()/min_day);
         r.end = i+1 != transitions_.end() ? i[1].timepoint :
                                           sys_seconds(sys_days(year::max()/max_day));
@@ -2156,7 +2163,7 @@ time_zone::get_info_impl(sys_seconds tp) const
                                      [](const sys_seconds& x, const transition& t)
                                      {
                                          return x < t.timepoint;
-                                     }));
+                                     }), tp);
 }
 
 local_info
@@ -2172,11 +2179,13 @@ time_zone::get_info_impl(local_seconds tp) const
                               return sys_seconds{x.time_since_epoch()} -
                                                          t.info->offset < t.timepoint;
                           });
-    i.first = load_sys_info(tr);
+    if (tr == transitions_.cend()) return Posix::time_zone{ posix_timezone_ }.get_info(tp);//TODO This logic needs updating for some single transition TZ's
+    auto sys_tp = sys_seconds{ tp.time_since_epoch() } - tr->info->offset;
+    i.first = load_sys_info(tr, sys_tp);
     auto tps = sys_seconds{(tp - i.first.offset).time_since_epoch()};
     if (tps < i.first.begin + days{1} && tr != transitions_.begin())
     {
-        i.second = load_sys_info(--tr);
+        i.second = load_sys_info(--tr, sys_tp); 
         tps = sys_seconds{(tp - i.second.offset).time_since_epoch()};
         if (tps < i.second.end && i.first.end != i.second.end)
         {
@@ -2190,7 +2199,7 @@ time_zone::get_info_impl(local_seconds tp) const
     }
     else if (tps >= i.first.end && tr != transitions_.end())
     {
-        i.second = load_sys_info(++tr);
+        i.second = load_sys_info(++tr, sys_tp);
         tps = sys_seconds{(tp - i.second.offset).time_since_epoch()};
         if (tps < i.second.begin)
             i.result = local_info::nonexistent;
@@ -2635,8 +2644,9 @@ static
 std::string
 get_version()
 {
+    return get_embedded_tzdb_version();
     using namespace std;
-    auto path = get_tz_dir() + string("/+VERSION");
+    auto path = "Version";//get_tz_dir() + string("/+VERSION"); Logic not included via ifdef
     ifstream in{path};
     string version;
     if (in)
@@ -2645,7 +2655,7 @@ get_version()
         return version;
     }
     in.clear();
-    in.open(get_tz_dir() + std::string(1, folder_delimiter) + "version");
+    //in.open(get_tz_dir() + std::string(1, folder_delimiter) + "version");
     if (in)
     {
         in >> version;
@@ -2658,8 +2668,7 @@ static
 std::vector<leap_second>
 find_read_and_leap_seconds()
 {
-    std::ifstream in(get_tz_dir() + std::string(1, folder_delimiter) + "leapseconds",
-                     std::ios_base::binary);
+    auto in = get_stream("leapseconds");// (get_tz_dir() + std::string(1, folder_delimiter) + "leapseconds",std::ios_base::binary);
     if (in)
     {
         std::vector<leap_second> leap_seconds;
@@ -2691,8 +2700,8 @@ find_read_and_leap_seconds()
         return leap_seconds;
     }
     in.clear();
-    in.open(get_tz_dir() + std::string(1, folder_delimiter) + "leap-seconds.list",
-                     std::ios_base::binary);
+    /*in.open(get_tz_dir() + std::string(1, folder_delimiter) + "leap-seconds.list",
+                     std::ios_base::binary);*/
     if (in)
     {
         std::vector<leap_second> leap_seconds;
@@ -2717,15 +2726,15 @@ find_read_and_leap_seconds()
         return leap_seconds;
     }
     in.clear();
-    in.open(get_tz_dir() + std::string(1, folder_delimiter) + "right/UTC",
-                     std::ios_base::binary);
+    /*in.open(get_tz_dir() + std::string(1, folder_delimiter) + "right/UTC",
+                     std::ios_base::binary);*/
     if (in)
     {
         return load_just_leaps(in);
     }
     in.clear();
-    in.open(get_tz_dir() + std::string(1, folder_delimiter) + "UTC",
-                     std::ios_base::binary);
+    /*in.open(get_tz_dir() + std::string(1, folder_delimiter) + "UTC",
+                     std::ios_base::binary);*/
     if (in)
     {
         return load_just_leaps(in);
@@ -2739,53 +2748,26 @@ init_tzdb()
 {
     std::unique_ptr<tzdb> db(new tzdb);
 
-    //Iterate through folders
-    std::queue<std::string> subfolders;
-    subfolders.emplace(get_tz_dir());
-    struct dirent* d;
-    struct stat s;
-    while (!subfolders.empty())
+    for (const auto& filename : get_available_file_names()) //RTC Logic changed to account for windows and embedded data support
     {
-        auto dirname = std::move(subfolders.front());
-        subfolders.pop();
-        auto dir = opendir(dirname.c_str());
-        if (!dir)
+        if (filename[0] == '.' ||
+            memcmp(filename.c_str(), "posix", 5) == 0 || // starts with posix
+            strcmp(filename.c_str(), "Factory") == 0 ||
+            strcmp(filename.c_str(), "iso3166.tab") == 0 ||
+            strcmp(filename.c_str(), "right") == 0 ||
+            strcmp(filename.c_str(), "+VERSION") == 0 ||
+            strcmp(filename.c_str(), "version") == 0 ||
+            strcmp(filename.c_str(), "zone.tab") == 0 ||
+            strcmp(filename.c_str(), "zone1970.tab") == 0 ||
+            strcmp(filename.c_str(), "tzdata.zi") == 0 ||
+            strcmp(filename.c_str(), "leapseconds") == 0 ||
+            strcmp(filename.c_str(), "leap-seconds.list") == 0 ||
+            strcmp(filename.c_str(), "windowsZones.xml") == 0)
             continue;
-        while ((d = readdir(dir)) != nullptr)
-        {
-            // Ignore these files:
-            if (d->d_name[0]                      == '.'    || // curdir, prevdir, hidden
-                memcmp(d->d_name, "posix", 5)     == 0      || // starts with posix
-                strcmp(d->d_name, "Factory")      == 0      ||
-                strcmp(d->d_name, "iso3166.tab")  == 0      ||
-                strcmp(d->d_name, "right")        == 0      ||
-                strcmp(d->d_name, "+VERSION")     == 0      ||
-                strcmp(d->d_name, "version")      == 0      ||
-                strcmp(d->d_name, "zone.tab")     == 0      ||
-                strcmp(d->d_name, "zone1970.tab") == 0      ||
-                strcmp(d->d_name, "tzdata.zi")    == 0      ||
-                strcmp(d->d_name, "leapseconds")  == 0      ||
-                strcmp(d->d_name, "leap-seconds.list") == 0   )
-                continue;
-            auto subname = dirname + folder_delimiter + d->d_name;
-            if(stat(subname.c_str(), &s) == 0)
-            {
-                if(S_ISDIR(s.st_mode))
-                {
-                    if(!S_ISLNK(s.st_mode))
-                    {
-                        subfolders.push(subname);
-                    }
-                }
-                else
-                {
-                    db->zones.emplace_back(subname.substr(get_tz_dir().size()+1),
-                                           detail::undocumented{});
-                }
-            }
-        }
-        closedir(dir);
+        db->zones.emplace_back(filename, detail::undocumented{});
     }
+    db->mappings = load_timezone_mappings_from_xml_file("windowsZones.xml");
+    sort_zone_mappings(db->mappings);
     db->zones.shrink_to_fit();
     std::sort(db->zones.begin(), db->zones.end());
     db->leap_seconds = find_read_and_leap_seconds();
