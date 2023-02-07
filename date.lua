@@ -10,7 +10,9 @@ includedirs {
   "include",
 }
 
+
 files {
+  "include/date/**.h",
   "src/**.cpp",
 }
 
@@ -30,7 +32,17 @@ if (_PLATFORM_MACOS) then
 end
 
 if (_PLATFORM_WINDOWS) then
+  defines{
+    "__ORDER_BIG_ENDIAN__=4321", -- Equivalent to Clang Macros lacked by MSVC. We define them as Little Endian.
+    "__ORDER_LITTLE_ENDIAN__=1234",
+    "__BYTE_ORDER__=__ORDER_LITTLE_ENDIAN__",
+  }
 end
 
 if (_PLATFORM_WINUWP) then
+  defines{
+    "__ORDER_BIG_ENDIAN__=4321", -- Equivalent to Clang Macros lacked by MSVC. We define them as Little Endian.
+    "__ORDER_LITTLE_ENDIAN__=1234",
+    "__BYTE_ORDER__=__ORDER_LITTLE_ENDIAN__",
+  }
 end
