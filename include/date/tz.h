@@ -44,7 +44,7 @@
 // Technically any OS may use the mapping process but currently only Windows does use it.
 
 #ifndef USE_OS_TZDB
-#  define USE_OS_TZDB 0
+#  define USE_OS_TZDB 1 //This is used to ensure that we use the compiled TZDB format, not the more complex uncompiled version.
 #endif
 
 #ifndef HAS_REMOTE_API
@@ -83,7 +83,7 @@ static_assert(HAS_REMOTE_API == 0 ? AUTO_DOWNLOAD == 0 : true,
 #endif
 
 #if USE_OS_TZDB
-#  ifdef _WIN32
+#  if defined(_WIN32) && !defined(RTC)
 #    error "USE_OS_TZDB can not be used on Windows"
 #  endif
 #endif
@@ -786,7 +786,7 @@ private:
     std::vector<detail::zonelet>         zonelets_;
 #endif  // !USE_OS_TZDB
     std::unique_ptr<std::once_flag>      adjusted_;
-
+    std::string                          posix_timezone_;
 public:
 #if !defined(_MSC_VER) || (_MSC_VER >= 1900)
     time_zone(time_zone&&) = default;
@@ -838,7 +838,7 @@ private:
     DATE_API void init() const;
     DATE_API void init_impl();
     DATE_API sys_info
-        load_sys_info(std::vector<detail::transition>::const_iterator i) const;
+        load_sys_info(std::vector<detail::transition>::const_iterator i, sys_seconds tp) const;
 
     template <class TimeType>
     DATE_API void
@@ -1109,7 +1109,7 @@ operator>=(const sys_time<Duration>& x, const leap_second& y)
 
 using leap = leap_second;
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(RTC) 
 
 namespace detail
 {
@@ -1158,7 +1158,7 @@ struct tzdb
 #if !USE_OS_TZDB
     std::vector<detail::Rule>   rules;
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) || defined(RTC) 
     std::vector<detail::timezone_mapping> mappings;
 #endif
     tzdb* next = nullptr;
@@ -1196,6 +1196,7 @@ struct tzdb
 #endif
     const time_zone* current_zone() const;
 };
+bool native_to_standard_timezone_name(const std::string& native_tz_name, std::string& standard_tz_name);
 
 using TZ_DB = tzdb;
 
