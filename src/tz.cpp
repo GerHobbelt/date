@@ -2752,24 +2752,24 @@ init_tzdb()
     {
         if (filename[0] == '.' ||
             memcmp(filename.c_str(), "posix", 5) == 0 || // starts with posix
-            strcmp(filename.c_str(), "factory") == 0 ||
+            strcmp(filename.c_str(), "Factory") == 0 ||
             strcmp(filename.c_str(), "iso3166.tab") == 0 ||
             strcmp(filename.c_str(), "right") == 0 ||
-            strcmp(filename.c_str(), "+version") == 0 ||
+            strcmp(filename.c_str(), "+VERSION") == 0 ||
             strcmp(filename.c_str(), "version") == 0 ||
             strcmp(filename.c_str(), "zone.tab") == 0 ||
             strcmp(filename.c_str(), "zone1970.tab") == 0 ||
             strcmp(filename.c_str(), "tzdata.zi") == 0 ||
             strcmp(filename.c_str(), "leapseconds") == 0 ||
             strcmp(filename.c_str(), "leap-seconds.list") == 0 ||
-            strcmp(filename.c_str(), "windowszones.xml") == 0)
+            strcmp(filename.c_str(), "windowsZones.xml") == 0)
             continue;
         db->zones.emplace_back(filename, detail::undocumented{});
     }
     db->mappings = load_timezone_mappings_from_xml_file("windowszones.xml");
     sort_zone_mappings(db->mappings);
     db->zones.shrink_to_fit();
-    std::sort(db->zones.begin(), db->zones.end());
+    std::sort(db->zones.begin(), db->zones.end(), [](const auto& zone_a, const auto& zone_b) {return ascii_string_to_lower(zone_a.name()) < ascii_string_to_lower(zone_b.name()); });
     db->leap_seconds = find_read_and_leap_seconds();
     db->version = get_version();
     return db;
@@ -3571,8 +3571,7 @@ tzdb::locate_zone(std::string_view tz_name) const
 tzdb::locate_zone(const std::string& tz_name) const
 #endif
 {
-    std::string lower_tz_name;
-    std::transform(tz_name.begin(), tz_name.end(), std::back_inserter(lower_tz_name), [](unsigned char c) {return std::tolower(c); });
+    std::string lower_tz_name = ascii_string_to_lower(tz_name);
     auto zi = std::lower_bound(zones.begin(), zones.end(), lower_tz_name,
 #if HAS_STRING_VIEW
         [](const time_zone& z, const std::string_view& nm)
@@ -3580,9 +3579,9 @@ tzdb::locate_zone(const std::string& tz_name) const
         [](const time_zone& z, const std::string& nm)
 #endif
         {
-            return z.name() < nm;
+            return ascii_string_to_lower(z.name()) < nm;
         });
-    if (zi == zones.end() || zi->name() != lower_tz_name)
+    if (zi == zones.end() || ascii_string_to_lower(zi->name()) != lower_tz_name)
     {
 #if !USE_OS_TZDB
         auto li = std::lower_bound(links.begin(), links.end(), tz_name,
