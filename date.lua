@@ -23,6 +23,9 @@ if (_PLATFORM_COCOA) then
 end
 
 if (_PLATFORM_IOS) then
+  files {
+    "src/ios.mm",
+  }
 end
 
 if (_PLATFORM_LINUX) then
