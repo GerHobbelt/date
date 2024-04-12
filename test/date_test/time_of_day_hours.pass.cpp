@@ -53,7 +53,9 @@ main()
 {
     using namespace date;
     using namespace std;
-    using namespace std::chrono;
+    //using namespace std::chrono;
+		using std::chrono::hours;
+		using std::chrono::seconds;
 
     using tod = time_of_day<hours>;
 
@@ -85,10 +87,10 @@ main()
     ostringstream os;
     os << t2;
     assert(os.str() == "13:00:00");
-    auto h = make12(t2.hours());
+    auto h = date::make12(t2.hours());
     os.str("");
     assert(h == hours{1});
     assert(t2.to_duration() == t1.to_duration());
-    assert(!is_am(t2.hours()));
-    assert(is_pm(t2.hours()));
+    assert(!date::is_am(t2.hours()));
+    assert(date::is_pm(t2.hours()));
 }

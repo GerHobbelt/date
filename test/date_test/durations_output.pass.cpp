@@ -26,9 +26,11 @@
 #include <cassert>
 #include <sstream>
 
+using std::chrono::duration;
+
 void test_SI()
 {
-   using namespace std::chrono;
+   //using namespace std::chrono;
    using namespace date;
 
    std::ostringstream os;
@@ -172,7 +174,7 @@ void test_SI()
 
 void test_calendar()
 {
-   using namespace std::chrono;
+   //using namespace std::chrono;
    using namespace date;
 
    std::ostringstream os;
@@ -204,7 +206,7 @@ void test_calendar()
 
 void test_integral_scale()
 {
-   using namespace std::chrono;
+   //using namespace std::chrono;
    using namespace date;
 
    std::ostringstream os;
@@ -252,7 +254,7 @@ void test_integral_scale()
 
 void test_ratio_scale()
 {
-   using namespace std::chrono;
+   //using namespace std::chrono;
    using namespace date;
 
    std::ostringstream os;

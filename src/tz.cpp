@@ -2981,7 +2981,7 @@ file_exists(const std::string& filename)
 #endif
 }
 
-#if defined(HAS_REMOTE_API) && !defined(DATE_EMBED_TZ_DB)
+#if HAS_REMOTE_API && !defined(DATE_EMBED_TZ_DB)
 
 // CURL tools
 

@@ -34,45 +34,51 @@ using microfortnights = std::chrono::duration<std::int64_t,
                                               date::detail::ratio_multiply<fortnights::period,
                                                                            std::micro>>;
 
+using std::chrono::hours;
+using std::chrono::minutes;
+using std::chrono::seconds;
+using std::chrono::microseconds;
+
 int
 main()
 {
     using namespace date;
-    using namespace std::chrono;
+    //using namespace std::chrono;
+
     std::ostringstream os;
-    os << format("%F %T", sys_days{jan/1/year::min()});
+    os << date::format("%F %T", sys_days{jan/1/year::min()});
     assert(os.str() == "-32767-01-01 00:00:00");
     os.str("");
-    os << format("%F %T", sys_days{dec/last/year::max()});
+    os << date::format("%F %T", sys_days{dec/last/year::max()});
     assert(os.str() == "32767-12-31 00:00:00");
     os.str("");
-    os << format("%F %T", sys_days{dec/last/year::max()} + hours{23} + minutes{59} +
+    os << date::format("%F %T", sys_days{dec/last/year::max()} + hours{23} + minutes{59} +
                                                   seconds{59} + microseconds{999999});
     assert(os.str() == "32767-12-31 23:59:59.999999");
     os.str("");
 
-    os << format("%Y-%m-%d %H:%M:%S", sys_days{jan/1/year::min()});
+    os << date::format("%Y-%m-%d %H:%M:%S", sys_days{jan/1/year::min()});
     assert(os.str() == "-32767-01-01 00:00:00");
     os.str("");
-    os << format("%Y-%m-%d %H:%M:%S", sys_days{dec/last/year::max()});
+    os << date::format("%Y-%m-%d %H:%M:%S", sys_days{dec/last/year::max()});
     assert(os.str() == "32767-12-31 00:00:00");
     os.str("");
-    os << format("%Y-%m-%d %H:%M:%S", sys_days{dec/last/year::max()} + hours{23} +
+    os << date::format("%Y-%m-%d %H:%M:%S", sys_days{dec/last/year::max()} + hours{23} +
                                         minutes{59} + seconds{59} + microseconds{999999});
     assert(os.str() == "32767-12-31 23:59:59.999999");
     os.str("");
 
-    os << format("%F %T", sys_days{jan/1/year::min()} + microfortnights{1});
+    os << date::format("%F %T", sys_days{jan/1/year::min()} + microfortnights{1});
     assert(os.str() == "-32767-01-01 00:00:01.2096");
     os.str("");
-    os << format("%F %T", sys_days{dec/last/year::max()} + microfortnights{1});
+    os << date::format("%F %T", sys_days{dec/last/year::max()} + microfortnights{1});
     assert(os.str() == "32767-12-31 00:00:01.2096");
     os.str("");
 
-    os << format("%F", jan/1/year::min());
+    os << date::format("%F", jan/1/year::min());
     assert(os.str() == "-32767-01-01");
     os.str("");
-    os << format("%F", dec/last/year::max());
+    os << date::format("%F", dec/last/year::max());
     assert(os.str() == "32767-12-31");
     os.str("");
 }

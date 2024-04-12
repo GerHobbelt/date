@@ -74,7 +74,7 @@ void
 test_arithmetic()
 {
     using namespace date;
-    using namespace std::chrono;
+    //using namespace std::chrono;
 
     for (int y1 = 2010; y1 <= 2015; ++y1)
     {
@@ -113,7 +113,7 @@ test_arithmetic()
 void test_arithemtic_not_ok()
 {
   using namespace date;
-  using namespace std::chrono;
+  //using namespace std::chrono;
 
   year_month ym{2018_y, month{14}};
 
