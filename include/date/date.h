@@ -5154,7 +5154,7 @@ to_stream(std::basic_ostream<CharT, Traits>& os, const CharT* fmt,
                     tm.tm_wday = static_cast<int>(extract_weekday(os, fds));
                     if (os.fail())
                         return os;
-                    tm.tm_yday = static_cast<int>((ld - local_days(ymd.year()/1/1)).count());
+                    tm.tm_yday = (ld - local_days(ymd.year()/1/1)).count();
                     CharT f[3] = {'%'};
                     auto fe = std::begin(f) + 1;
                     if (modified == CharT{'E'})
@@ -5783,7 +5783,7 @@ to_stream(std::basic_ostream<CharT, Traits>& os, const CharT* fmt,
                         tm.tm_wday = static_cast<int>(extract_weekday(os, fds));
                         if (os.fail())
                             return os;
-                        tm.tm_yday = static_cast<int>((ld - local_days(ymd.year()/1/1)).count());
+                        tm.tm_yday = (ld - local_days(ymd.year()/1/1)).count();
                         facet.put(os, os, os.fill(), &tm, std::begin(f), std::end(f));
                     }
 #endif
@@ -5831,7 +5831,7 @@ to_stream(std::basic_ostream<CharT, Traits>& os, const CharT* fmt,
                         tm.tm_wday = static_cast<int>(extract_weekday(os, fds));
                         if (os.fail())
                             return os;
-                        tm.tm_yday = static_cast<int>((ld - local_days(ymd.year()/1/1)).count());
+                        tm.tm_yday = (ld - local_days(ymd.year()/1/1)).count();
                         facet.put(os, os, os.fill(), &tm, std::begin(f), std::end(f));
                     }
 #endif
@@ -5908,7 +5908,7 @@ to_stream(std::basic_ostream<CharT, Traits>& os, const CharT* fmt,
                         tm.tm_wday = static_cast<int>(extract_weekday(os, fds));
                         if (os.fail())
                             return os;
-                        tm.tm_yday = static_cast<int>((ld - local_days(ymd.year()/1/1)).count());
+                        tm.tm_yday = (ld - local_days(ymd.year()/1/1)).count();
                         facet.put(os, os, os.fill(), &tm, std::begin(f), std::end(f));
                     }
 #endif
@@ -7800,8 +7800,8 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
             if (ymd.ok())
             {
                 if (wd == not_a_weekday)
-                    wd = static_cast<int>((weekday(sys_days(ymd)) - Sunday).count());
-                else if (wd != static_cast<int>((weekday(sys_days(ymd)) - Sunday).count()))
+                    wd = (weekday(sys_days(ymd)) - Sunday).count();
+                else if (wd != (weekday(sys_days(ymd)) - Sunday).count())
                     goto broken;
                 if (!computed)
                 {
