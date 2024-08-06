@@ -294,7 +294,7 @@ struct transition
         if (t.info->offset >= std::chrono::seconds{0})
             os << '+';
         os << make_time(t.info->offset);
-        if (t.info->is_dst > 0)
+        if (t.info->is_dst)
             os << " daylight ";
         else
             os << " standard ";
