@@ -2030,7 +2030,7 @@ time_zone::load_data(std::istream& inf,
         transitions_.emplace(transitions_.begin(), min_seconds);
         auto tf = std::find_if(ttinfos_.begin(), ttinfos_.end(),
                                [](const expanded_ttinfo& ti)
-                                   {return ti.is_dst == 0;});
+                                   {return !ti.is_dst;});
         if (tf == ttinfos_.end())
             tf = ttinfos_.begin();
         transitions_[i].info = &*tf;
@@ -2220,7 +2220,7 @@ operator<<(std::ostream& os, const time_zone& z)
     if (t.info->offset >= seconds{0})
         os << '+';
     os << make_time(t.info->offset);
-    if (t.info->is_dst > 0)
+    if (t.info->is_dst)
         os << " daylight ";
     else
         os << " standard ";
@@ -2635,7 +2635,7 @@ std::ostream&
 operator<<(std::ostream& os, const leap_second& x)
 {
     using namespace date;
-    return os << x.date_ << "  +";
+    return date::operator<<(os, x.date_) << "  +";
 }
 
 #if USE_OS_TZDB
