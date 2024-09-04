@@ -226,10 +226,10 @@ nonexistent_local_time::make_msg(local_time<Duration> tp, const local_info& i)
 {
     assert(i.result == local_info::nonexistent);
     std::ostringstream os;
-    os << tp << " is in a gap between\n"
-       << local_seconds{i.first.end.time_since_epoch()} + i.first.offset << ' '
-       << i.first.abbrev << " and\n"
-       << local_seconds{i.second.begin.time_since_epoch()} + i.second.offset << ' '
+    date::operator<<(os, tp) << " is in a gap between\n";
+    date::operator<<(os, local_seconds{ i.first.end.time_since_epoch() } + i.first.offset) << ' '
+       << i.first.abbrev << " and\n";
+    date::operator<<(os, local_seconds{ i.second.begin.time_since_epoch() } + i.second.offset) << ' '
        << i.second.abbrev
        << " which are both equivalent to\n"
        << i.first.end << " UTC";
