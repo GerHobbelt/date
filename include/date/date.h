@@ -4235,7 +4235,7 @@ inline
 std::basic_ostream<CharT, Traits>&
 operator<<(std::basic_ostream<CharT, Traits>& os, const local_time<Duration>& ut)
 {
-    return (os << sys_time<Duration>{ut.time_since_epoch()});
+    return date::operator<<(os, sys_time<Duration>{ut.time_since_epoch()});
 }
 
 namespace detail
@@ -7898,7 +7898,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt, year& y,
 {
     using CT = std::chrono::seconds;
     fields<CT> fds{};
-    from_stream(is, fmt, fds, abbrev, offset);
+    date::from_stream(is, fmt, fds, abbrev, offset);
     if (!fds.ymd.year().ok())
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -7914,7 +7914,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt, month& m,
 {
     using CT = std::chrono::seconds;
     fields<CT> fds{};
-    from_stream(is, fmt, fds, abbrev, offset);
+    date::from_stream(is, fmt, fds, abbrev, offset);
     if (!fds.ymd.month().ok())
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -7930,7 +7930,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt, day& d,
 {
     using CT = std::chrono::seconds;
     fields<CT> fds{};
-    from_stream(is, fmt, fds, abbrev, offset);
+    date::from_stream(is, fmt, fds, abbrev, offset);
     if (!fds.ymd.day().ok())
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -7946,7 +7946,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt, weekday& wd
 {
     using CT = std::chrono::seconds;
     fields<CT> fds{};
-    from_stream(is, fmt, fds, abbrev, offset);
+    date::from_stream(is, fmt, fds, abbrev, offset);
     if (!fds.wd.ok())
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -7962,7 +7962,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt, year_month&
 {
     using CT = std::chrono::seconds;
     fields<CT> fds{};
-    from_stream(is, fmt, fds, abbrev, offset);
+    date::from_stream(is, fmt, fds, abbrev, offset);
     if (!fds.ymd.month().ok())
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -7978,7 +7978,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt, month_day& 
 {
     using CT = std::chrono::seconds;
     fields<CT> fds{};
-    from_stream(is, fmt, fds, abbrev, offset);
+    date::from_stream(is, fmt, fds, abbrev, offset);
     if (!fds.ymd.month().ok() || !fds.ymd.day().ok())
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -7994,7 +7994,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
 {
     using CT = std::chrono::seconds;
     fields<CT> fds{};
-    from_stream(is, fmt, fds, abbrev, offset);
+    date::from_stream(is, fmt, fds, abbrev, offset);
     if (!fds.ymd.ok())
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -8014,7 +8014,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
     auto offptr = offset ? offset : &offset_local;
     fields<CT> fds{};
     fds.has_tod = true;
-    from_stream(is, fmt, fds, abbrev, offptr);
+    date::from_stream(is, fmt, fds, abbrev, offptr);
     if (!fds.ymd.ok() || !fds.tod.in_conventional_range())
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -8032,7 +8032,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
     using detail::round_i;
     fields<CT> fds{};
     fds.has_tod = true;
-    from_stream(is, fmt, fds, abbrev, offset);
+    date::from_stream(is, fmt, fds, abbrev, offset);
     if (!fds.ymd.ok() || !fds.tod.in_conventional_range())
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -8050,7 +8050,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
     using Duration = std::chrono::duration<Rep, Period>;
     using CT = typename std::common_type<Duration, std::chrono::seconds>::type;
     fields<CT> fds{};
-    from_stream(is, fmt, fds, abbrev, offset);
+    date::from_stream(is, fmt, fds, abbrev, offset);
     if (!fds.has_tod)
         is.setstate(std::ios::failbit);
     if (!is.fail())
@@ -8084,14 +8084,14 @@ std::basic_istream<CharT, Traits>&
 operator>>(std::basic_istream<CharT, Traits>& is,
            const parse_manip<Parsable, CharT, Traits, Alloc>& x)
 {
-    return from_stream(is, x.format_.c_str(), x.tp_, x.abbrev_, x.offset_);
+    return date::from_stream(is, x.format_.c_str(), x.tp_, x.abbrev_, x.offset_);
 }
 
 template <class Parsable, class CharT, class Traits, class Alloc>
 inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp)
-    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp})
 {
@@ -8103,7 +8103,7 @@ inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp,
       std::basic_string<CharT, Traits, Alloc>& abbrev)
-    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp, &abbrev),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev})
 {
@@ -8115,7 +8115,7 @@ inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp,
       std::chrono::minutes& offset)
-    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp,
                             std::declval<std::basic_string<CharT, Traits, Alloc>*>(),
                             &offset),
@@ -8129,7 +8129,7 @@ inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp,
       std::basic_string<CharT, Traits, Alloc>& abbrev, std::chrono::minutes& offset)
-    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp, &abbrev, &offset),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev, &offset})
 {
@@ -8142,7 +8142,7 @@ template <class Parsable, class CharT>
 inline
 auto
 parse(const CharT* format, Parsable& tp)
-    -> decltype(from_stream(std::declval<std::basic_istream<CharT>&>(), format, tp),
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT>&>(), format, tp),
                 parse_manip<Parsable, CharT>{format, tp})
 {
     return {format, tp};
@@ -8152,7 +8152,7 @@ template <class Parsable, class CharT, class Traits, class Alloc>
 inline
 auto
 parse(const CharT* format, Parsable& tp, std::basic_string<CharT, Traits, Alloc>& abbrev)
-    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
                             tp, &abbrev),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev})
 {
@@ -8163,7 +8163,7 @@ template <class Parsable, class CharT>
 inline
 auto
 parse(const CharT* format, Parsable& tp, std::chrono::minutes& offset)
-    -> decltype(from_stream(std::declval<std::basic_istream<CharT>&>(), format,
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT>&>(), format,
                             tp, std::declval<std::basic_string<CharT>*>(), &offset),
                 parse_manip<Parsable, CharT>{format, tp, nullptr, &offset})
 {
@@ -8175,7 +8175,7 @@ inline
 auto
 parse(const CharT* format, Parsable& tp,
       std::basic_string<CharT, Traits, Alloc>& abbrev, std::chrono::minutes& offset)
-    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
                             tp, &abbrev, &offset),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev, &offset})
 {

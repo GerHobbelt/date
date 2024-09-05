@@ -226,13 +226,13 @@ nonexistent_local_time::make_msg(local_time<Duration> tp, const local_info& i)
 {
     assert(i.result == local_info::nonexistent);
     std::ostringstream os;
-    os << tp << " is in a gap between\n"
-       << local_seconds{i.first.end.time_since_epoch()} + i.first.offset << ' '
-       << i.first.abbrev << " and\n"
-       << local_seconds{i.second.begin.time_since_epoch()} + i.second.offset << ' '
+    date::operator<<(os, tp) << " is in a gap between\n";
+    date::operator<<(os, local_seconds{ i.first.end.time_since_epoch() } + i.first.offset) << ' '
+       << i.first.abbrev << " and\n";
+    date::operator<<(os, local_seconds{ i.second.begin.time_since_epoch() } + i.second.offset) << ' '
        << i.second.abbrev
-       << " which are both equivalent to\n"
-       << i.first.end << " UTC";
+       << " which are both equivalent to\n";
+    date::operator<<(os, i.first.end) << " UTC";
     return os.str();
 }
 
@@ -263,11 +263,11 @@ ambiguous_local_time::make_msg(local_time<Duration> tp, const local_info& i)
 {
     assert(i.result == local_info::ambiguous);
     std::ostringstream os;
-    os << tp << " is ambiguous.  It could be\n"
-       << tp << ' ' << i.first.abbrev << " == "
-       << tp - i.first.offset << " UTC or\n"
-       << tp << ' ' << i.second.abbrev  << " == "
-       << tp - i.second.offset  << " UTC";
+    date::operator<<(os, tp) << " is ambiguous.  It could be\n";
+    date::operator<<(os, tp) << ' ' << i.first.abbrev << " == ";
+    date::operator<<(os, tp - i.first.offset) << " UTC or\n";
+    date::operator<<(os, tp) << ' ' << i.second.abbrev << " == ";
+    date::operator<<(os, tp - i.second.offset) << " UTC";;
     return os.str();
 }
 
