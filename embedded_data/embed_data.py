@@ -25,8 +25,6 @@ def get_tzdb_path_from_arguments() -> str:
     if len(sys.argv) != 2 or sys.argv[1].lower() == "-h":
         sys.exit("Expected usage: Python embed_data.py filePathToCompiledTZDB")
     tzdb_path = sys.argv[1]
-
-    error_if_file_not_found(tzdb_path, "CET", "Could not find CET in listed directory, are you sure this is a compiled tzdb?")
     error_if_file_not_found(tzdb_path, "windowsZones.xml", "Could not find windowsZones.xml in listed directory, please copy from source.")
     error_if_file_not_found(tzdb_path, "leapseconds", "Could not find leapseconds in listed directory, please copy from an uncompiled TZDB?")
     error_if_file_not_found(tzdb_path, "version", "Could not find version file, please copy from uncompiled tzdb")
