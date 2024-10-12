@@ -851,6 +851,7 @@ load_timezone_mappings_from_xml_file(const std::string& input_path)
     while (!mapTimezonesOpenTagFound)
     {
         std::getline(is, line);
+        line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
         ++line_num;
         if (is.eof())
         {
@@ -3867,6 +3868,7 @@ init_tzdb()
         while (infile)
         {
             std::getline(infile, line);
+            line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
             if (!line.empty() && line[0] != '#')
             {
                 std::istringstream in(line);
