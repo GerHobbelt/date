@@ -2105,18 +2105,6 @@ time_zone::init_impl()
         }
     }
 #endif  // !MISSING_LEAP_SECONDS
-    auto b = transitions_.begin();
-    auto i = transitions_.end();
-    if (i != b)
-    {
-        for (--i; i != b; --i)
-        {
-            if (i->info->offset == i[-1].info->offset &&
-                i->info->abbrev == i[-1].info->abbrev &&
-                i->info->is_dst == i[-1].info->is_dst)
-                i = transitions_.erase(i);
-        }
-    }
 }
 
 void
