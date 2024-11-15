@@ -6529,12 +6529,12 @@ read(std::basic_istream<CharT, Traits>& is, int a0, Args&& ...args)
             *e++ = static_cast<CharT>(CharT(u % 10) + CharT{'0'});
             u /= 10;
         } while (u > 0);
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && __GNUC__ >= 11 && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
 #endif
         std::reverse(buf, e);
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && __GNUC__ >= 11 && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
         for (auto p = buf; p != e && is.rdstate() == std::ios::goodbit; ++p)
