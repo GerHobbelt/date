@@ -46,6 +46,8 @@ main()
     //using namespace std::chrono;
 
     std::ostringstream os;
+    using date::year, date::last;
+
     os << date::format("%F %T", sys_days{jan/1/year::min()});
     assert(os.str() == "-32767-01-01 00:00:00");
     os.str("");

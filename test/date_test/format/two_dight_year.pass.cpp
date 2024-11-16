@@ -117,6 +117,6 @@ main()
     assert(os.str() == "01");
 
     os.str("");
-    os << date::format("%y", sys_days{jun/1/year::min()});
+    os << date::format("%y", sys_days{jun/1/date::year::min()});
     assert(os.str() == "67");
 }

@@ -397,6 +397,7 @@ test_F()
 {
     using namespace date;
     //using namespace std::chrono;
+    using date::year_month_day;
     {
         std::istringstream in{"2016-12-13"};
         sys_days tp;
@@ -407,7 +408,7 @@ test_F()
     }
     {
         std::istringstream in{"2016-12-13"};
-        year_month_day tp;
+        year_month_day tp{};
         in >> date::parse("%F", tp);
         assert(!in.fail());
         assert(!in.bad());
@@ -420,6 +421,7 @@ test_H()
 {
     using namespace date;
     //using namespace std::chrono;
+    using date::sys_time;
     {
         std::istringstream in{"2016-12-11 15"};
         sys_time<hours> tp;
@@ -441,6 +443,7 @@ test_Ip()
 {
     using namespace date;
     //using namespace std::chrono;
+    using date::sys_time;
     {
         std::istringstream in{"2016-12-11 1 pm"};
         sys_time<hours> tp;
@@ -514,6 +517,7 @@ test_M()
 {
     using namespace date;
     //using namespace std::chrono;
+    using date::sys_time;
     {
         std::istringstream in{"2016-12-11 15"};
         sys_time<minutes> tp;
@@ -535,6 +539,7 @@ test_S()
 {
     using namespace date;
     //using namespace std::chrono;
+    using date::sys_time;
     {
         std::istringstream in{"2016-12-11 15"};
         sys_seconds tp;
@@ -564,6 +569,7 @@ test_T()
 {
     using namespace date;
     //using namespace std::chrono;
+    using date::sys_time;
     {
         std::istringstream in{"2016-12-11 15:43:22"};
         sys_seconds tp;
@@ -622,6 +628,7 @@ test_p()
 {
     using namespace date;
     //using namespace std::chrono;
+    using date::sys_time;
     {
         std::istringstream in{"2016-12-11 11pm"};
         sys_time<hours> tp;
@@ -751,6 +758,7 @@ test_z()
 {
     using namespace date;
     //using namespace std::chrono;
+    using date::local_seconds, date::local_days;
     {
         std::istringstream in{"2016-12-26 15:53:22 -0500"};
         sys_seconds tp;
@@ -782,6 +790,7 @@ test_Z()
 {
     using namespace date;
     //using namespace std::chrono;
+    using date::local_seconds, date::local_days;
     {
         std::string a;
         std::istringstream in{"2016-12-26 15:53:22 word"};

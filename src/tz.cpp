@@ -2736,7 +2736,8 @@ operator<<(std::ostream& os, const time_zone& z)
         os.width(8);
         os << s.format_ << "   ";
         os << s.until_year_ << ' ' << s.until_date_;
-        os << "   " << s.until_utc_ << " UTC";
+        os << "   ";
+        date::operator<<(os, s.until_utc_) << " UTC";
         os << "   " << s.until_std_ << " STD";
         os << "   " << s.until_loc_;
         os << "   " << make_time(s.initial_save_);
@@ -2761,8 +2762,7 @@ operator<<(std::ostream& os, const time_zone& z)
 std::ostream&
 operator<<(std::ostream& os, const leap_second& x)
 {
-    using namespace date;
-    return os << x.date_ << "  +";
+    return date::operator<<(os, x.date_) << "  +";
 }
 
 #if USE_OS_TZDB
@@ -3758,38 +3758,57 @@ class recursion_limiter
     unsigned depth_ = 0;
     unsigned limit_;
 
-    class restore_recursion_depth
-    {
-        recursion_limiter* rc_;
-
-    public:
-        ~restore_recursion_depth() {--(rc_->depth_);}
-        restore_recursion_depth(restore_recursion_depth&&) = default;
-
-        explicit restore_recursion_depth(recursion_limiter* rc) noexcept
-            : rc_{rc}
-        {}
-    };
+    class restore_recursion_depth;
 
 public:
     recursion_limiter(recursion_limiter const&) = delete;
     recursion_limiter& operator=(recursion_limiter const&) = delete;
 
-    explicit recursion_limiter(unsigned limit) noexcept
-        : limit_{limit}
-    {
-    }
+    explicit constexpr recursion_limiter(unsigned limit) noexcept;
 
-    restore_recursion_depth
-    count()
-    {
-        ++depth_;
-        if (depth_ > limit_)
-            throw std::runtime_error("recursion limit of " +
-                                      std::to_string(limit_) + " exceeded");
-        return restore_recursion_depth{this};
-    }
+    restore_recursion_depth count();
 };
+
+class recursion_limiter::restore_recursion_depth
+{
+    recursion_limiter* rc_;
+
+public:
+    ~restore_recursion_depth();
+    restore_recursion_depth(restore_recursion_depth&&) = default;
+
+    explicit restore_recursion_depth(recursion_limiter* rc) noexcept;
+};
+
+inline
+recursion_limiter::restore_recursion_depth::~restore_recursion_depth()
+{
+    --(rc_->depth_);
+}
+
+inline
+recursion_limiter::restore_recursion_depth::restore_recursion_depth(recursion_limiter* rc)
+                                                                                  noexcept
+    : rc_{rc}
+{}
+
+inline
+constexpr
+recursion_limiter::recursion_limiter(unsigned limit) noexcept
+    : limit_{limit}
+{
+}
+
+inline
+recursion_limiter::restore_recursion_depth
+recursion_limiter::count()
+{
+    ++depth_;
+    if (depth_ > limit_)
+        throw std::runtime_error("recursion limit of " +
+                                  std::to_string(limit_) + " exceeded");
+    return restore_recursion_depth{this};
+}
 
 }  // unnamed namespace
 

@@ -81,7 +81,7 @@ main()
     static_assert(t1.to_duration() == hours{13}, "");
 #endif
 
-    auto t2 = t1;
+    const auto t2 = t1;
     assert(t2.hours() == t1.hours());
     assert(t2.to_duration() == t1.to_duration());
     ostringstream os;

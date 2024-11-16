@@ -25,6 +25,11 @@ include( cmake/pkg.cmake )
 
 get_directory_property( has_parent PARENT_DIRECTORY )
 
+if (POLICY CMP0077)
+    # Allow CMake 3.13+ to override options when using FetchContent / add_subdirectory.
+    cmake_policy(SET CMP0077 NEW)
+endif ()
+
 # Override by setting on CMake command line.
 option( USE_RES_TZ_DB "Use embedded DB" ON )
 option( USE_SYSTEM_TZ_DB "Use the operating system's timezone database" OFF )

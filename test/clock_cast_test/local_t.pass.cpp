@@ -28,9 +28,10 @@ main()
 {
    using namespace date;
    //using namespace std::chrono;
-	 using system_clock = std::chrono::system_clock;
-	 using seconds = std::chrono::seconds;
-	 using milliseconds = std::chrono::milliseconds;
+   using system_clock = std::chrono::system_clock;
+   using seconds = std::chrono::seconds;
+   using milliseconds = std::chrono::milliseconds;
+   using date::local_days, date::local_t, date::January, date::July, date::Sunday;
 
    // self
    {
