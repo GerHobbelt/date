@@ -626,6 +626,7 @@ static
 std::string
 get_alpha_word(std::istream& in)
 {
+    ws(in);
     std::string s;
     while (!in.eof() && std::isalpha(in.peek()))
         s.push_back(static_cast<char>(in.get()));
@@ -2845,7 +2846,8 @@ find_read_and_leap_seconds()
                 iss.exceptions(std::ios::failbit | std::ios::badbit);
                 std::string word;
                 iss >> word;
-                if (word == "Leap")
+                tolower(word);
+                if (is_prefix_of(word, "leap"))
                 {
                     int y, m, d;
                     iss >> y;
@@ -2937,6 +2939,7 @@ init_tzdb()
                 strcmp(d->d_name, "version")      == 0      ||
                 strcmp(d->d_name, "zone.tab")     == 0      ||
                 strcmp(d->d_name, "zone1970.tab") == 0      ||
+                strcmp(d->d_name, "zonenow.tab")  == 0      ||
                 strcmp(d->d_name, "tzdata.zi")    == 0      ||
                 strcmp(d->d_name, "leapseconds")  == 0      ||
                 strcmp(d->d_name, "leap-seconds.list") == 0   )
@@ -4228,6 +4231,25 @@ tzdb::current_zone() const
             }
         }
         // Fall through to try other means.
+    }
+    // On OpenWRT we need to check /etc/config/system
+    // It will have a line with the following structure
+    //   ...
+    //   option zoneName 'Europe/Berlin'
+    //   ...
+    {
+        std::ifstream timezone_file("/etc/config/system");
+        if (timezone_file.is_open())
+        {
+            for(std::string result; std::getline(timezone_file, result);) {
+                std::string findStr = "option zoneName '";
+                size_t startPos = result.find(findStr);
+                if (startPos != std::string::npos) {
+                    size_t endPos = result.find("'", startPos + findStr.size());
+                    return locate_zone(result.substr(startPos + findStr.size(), endPos - startPos - findStr.size()));
+                }
+            }
+        }
     }
     throw std::runtime_error("Could not get current timezone");
 }
