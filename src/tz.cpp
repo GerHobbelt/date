@@ -4222,7 +4222,9 @@ sniff_realpath(const char* timezone)
     if (rp.get() == nullptr)
         throw system_error(errno, system_category(), "realpath() failed");
     auto result = extract_tz_name(rp.get());
-    return result.find("posix") != 0;
+    if (result.find("posix") == 0)
+        return false;
+    return result != "posixrules";
 }
 
 const time_zone*
