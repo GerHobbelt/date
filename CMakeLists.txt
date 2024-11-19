@@ -20,7 +20,6 @@ cmake_minimum_required( VERSION 3.7 )
 project( date VERSION 3.0.1 )
 set(ABI_VERSION 3) # used as SOVERSION, increment when ABI changes
 
-include( GNUInstallDirs )
 include( cmake/pkg.cmake )
 
 get_directory_property( has_parent PARENT_DIRECTORY )
@@ -42,10 +41,15 @@ option( ENABLE_FUZZ_TESTING "Build fuzz harnesses" OFF )
 option( DISABLE_STRING_VIEW "Disable string view" OFF )
 option( COMPILE_WITH_C_LOCALE "define ONLY_C_LOCALE=1" OFF )
 option( BUILD_TZ_LIB "build/install of TZ library" ON )
+option( ENABLE_DATE_INSTALL "Enable install" ON )
 
 if( ENABLE_DATE_TESTING AND NOT BUILD_TZ_LIB )
     message(WARNING "Testing requested, but BUILD_TZ_LIB not ON - forcing the latter")
     set (BUILD_TZ_LIB ON CACHE BOOL "required for testing" FORCE)
+endif( )
+
+if( ENABLE_DATE_INSTALL )
+  include( GNUInstallDirs )
 endif( )
 
 #[===================================================================[
@@ -55,10 +59,10 @@ add_library( date INTERFACE )
 add_library( date::date ALIAS date )
 target_include_directories( date SYSTEM INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include> )
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> )
 # adding header sources just helps IDEs
 target_sources( date INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>$<INSTALL_INTERFACE:include>/date/date.h
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/date/date.h
     # the rest of these are not currently part of the public interface of the library:
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/date/solar_hijri.h>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/date/islamic.h>
@@ -87,6 +91,8 @@ else()
 endif()
 if ( DISABLE_STRING_VIEW )
   target_compile_definitions( date INTERFACE HAS_STRING_VIEW=0 -DHAS_DEDUCTION_GUIDES=0 )
+else()
+  target_compile_definitions( date INTERFACE HAS_STRING_VIEW=1 )
 endif()
 
 #[===================================================================[
@@ -96,14 +102,14 @@ if( BUILD_TZ_LIB )
     add_library( date-tz )
     target_sources( date-tz
       PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>$<INSTALL_INTERFACE:include>/date/tz.h
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/date/tz.h
       PRIVATE
         include/date/tz_private.h
         src/tz.cpp )
     if ( IOS )
       target_sources( date-tz
         PUBLIC
-          $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>$<INSTALL_INTERFACE:include>/date/ios.h
+          $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>/date/ios.h
         PRIVATE
           src/ios.mm )
     endif()
@@ -111,7 +117,7 @@ if( BUILD_TZ_LIB )
     target_link_libraries( date-tz PUBLIC date )
     target_include_directories( date-tz PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include> )
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> )
 
     target_compile_definitions( date-tz
         PRIVATE
@@ -171,23 +177,22 @@ endif( )
 #[===================================================================[
    installation
 #]===================================================================]
-if (ENABLE_DATE_INSTALL)
-    set( version_config "${CMAKE_CURRENT_BINARY_DIR}/dateConfigVersion.cmake" )
+if( ENABLE_DATE_INSTALL )
+  set( version_config "${CMAKE_CURRENT_BINARY_DIR}/dateConfigVersion.cmake" )
 
-    include( CMakePackageConfigHelpers )
-    write_basic_package_version_file( "${version_config}"
-        VERSION ${PROJECT_VERSION}
-        COMPATIBILITY SameMajorVersion )
+  include( CMakePackageConfigHelpers )
+  write_basic_package_version_file( "${version_config}"
+      VERSION ${PROJECT_VERSION}
+      COMPATIBILITY SameMajorVersion )
 
-
-install( TARGETS date
-    EXPORT dateConfig
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/date )
-export( TARGETS date NAMESPACE date:: FILE dateTargets.cmake )
-if (CMAKE_VERSION VERSION_LESS 3.15)
-    install(
-        FILES include/date/date.h
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/date )
+  install( TARGETS date
+      EXPORT dateConfig
+      PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/date )
+  export( TARGETS date NAMESPACE date:: FILE dateTargets.cmake )
+  if (CMAKE_VERSION VERSION_LESS 3.15)
+      install(
+          FILES include/date/date.h
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/date )
 endif ()
 
 if( BUILD_TZ_LIB )
@@ -198,31 +203,31 @@ if( BUILD_TZ_LIB )
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} )  # This is for Windows
     export( TARGETS date-tz NAMESPACE date:: APPEND FILE dateTargets.cmake )
+endif ()
+
+  if( BUILD_TZ_LIB )
+      install( TARGETS date-tz
+          EXPORT dateConfig
+          PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/date
+          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} )  # This is for Windows
+      export( TARGETS date-tz NAMESPACE date:: APPEND FILE dateTargets.cmake )
+  endif( )
+
+  if( WIN32 AND NOT CYGWIN)
+      set( CONFIG_LOC CMake )
+  else( )
+      set( CONFIG_LOC "${CMAKE_INSTALL_LIBDIR}/cmake/date" )
+  endif( )
+  install( EXPORT dateConfig
+    FILE dateTargets.cmake
+    NAMESPACE date::
+    DESTINATION ${CONFIG_LOC} )
+  install (
+    FILES cmake/dateConfig.cmake "${version_config}"
+    DESTINATION ${CONFIG_LOC})
 endif( )
-
-    if( BUILD_TZ_LIB )
-        install( TARGETS date-tz
-            EXPORT dateConfig
-            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/date
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} )  # This is for Windows
-        export( TARGETS date-tz NAMESPACE date:: APPEND FILE dateTargets.cmake )
-    endif( )
-
-    if( WIN32 AND NOT CYGWIN)
-        set( CONFIG_LOC CMake )
-    else( )
-        set( CONFIG_LOC "${CMAKE_INSTALL_LIBDIR}/cmake/date" )
-    endif( )
-    install( EXPORT dateConfig
-      FILE dateTargets.cmake
-      NAMESPACE date::
-      DESTINATION ${CONFIG_LOC} )
-    install (
-      FILES cmake/dateConfig.cmake "${version_config}"
-      DESTINATION ${CONFIG_LOC})
-endif()
 
 #[===================================================================[
    testing
