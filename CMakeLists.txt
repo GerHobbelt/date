@@ -20,8 +20,6 @@ cmake_minimum_required( VERSION 3.7 )
 project( date VERSION 3.0.3 )
 set(ABI_VERSION 3) # used as SOVERSION, increment when ABI changes
 
-include( cmake/pkg.cmake )
-
 get_directory_property( has_parent PARENT_DIRECTORY )
 
 if (POLICY CMP0077)
@@ -30,6 +28,8 @@ if (POLICY CMP0077)
 endif ()
 
 # Override by setting on CMake command line.
+set( CMAKE_CXX_STANDARD 17 CACHE STRING "The C++ standard whose features are requested." )
+
 option( USE_RES_TZ_DB "Use embedded DB" ON )
 option( USE_SYSTEM_TZ_DB "Use the operating system's timezone database" OFF )
 option( MANUAL_TZ_DB "User will set TZ DB manually by invoking set_install in their code" OFF )
@@ -51,6 +51,24 @@ endif( )
 if( ENABLE_DATE_INSTALL )
   include( GNUInstallDirs )
 endif( )
+
+function( print_option OPT )
+    if ( NOT DEFINED PRINT_OPTION_CURR_${OPT} OR ( NOT PRINT_OPTION_CURR_${OPT} STREQUAL ${OPT} ) )
+        set( PRINT_OPTION_CURR_${OPT} ${${OPT}} CACHE BOOL "" )
+        mark_as_advanced(PRINT_OPTION_CURR_${OPT})
+        message( "# date: ${OPT} ${${OPT}}" )
+    endif( )
+endfunction( )
+
+print_option( USE_SYSTEM_TZ_DB )
+print_option( MANUAL_TZ_DB )
+print_option( USE_TZ_DB_IN_DOT )
+print_option( BUILD_SHARED_LIBS  )
+print_option( ENABLE_DATE_TESTING )
+print_option( DISABLE_STRING_VIEW )
+print_option( USE_RES_TZ_DB )
+print_option( ENABLE_DATE_INSTALL )
+print_option( ENABLE_FUZZ_TESTING )
 
 #[===================================================================[
    date (header only) library
@@ -147,9 +165,9 @@ if( BUILD_TZ_LIB )
     endif()
 
     if ( USE_SYSTEM_TZ_DB OR MANUAL_TZ_DB )
-      target_compile_definitions( date-tz PRIVATE HAS_REMOTE_API=0 )
+      target_compile_definitions( date-tz PRIVATE AUTO_DOWNLOAD=0 HAS_REMOTE_API=0 )
     else()
-      target_compile_definitions( date-tz PRIVATE HAS_REMOTE_API=1 )
+      target_compile_definitions( date-tz PRIVATE AUTO_DOWNLOAD=1 HAS_REMOTE_API=1 )
     endif()
 
     if ( USE_SYSTEM_TZ_DB AND NOT WIN32 AND NOT MANUAL_TZ_DB )
