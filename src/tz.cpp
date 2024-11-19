@@ -96,8 +96,25 @@
 #endif
 
 #if defined(ANDROID) || defined(__ANDROID__)
-#include <sys/system_properties.h>
-#endif
+#  include <sys/system_properties.h>
+#  if USE_OS_TZDB
+#    define MISSING_LEAP_SECONDS 1
+// from https://android.googlesource.com/platform/bionic/+/master/libc/tzcode/bionic.cpp
+static constexpr size_t ANDROID_TIMEZONE_NAME_LENGTH = 40;
+struct bionic_tzdata_header_t {
+  char tzdata_version[12];
+  std::int32_t index_offset;
+  std::int32_t data_offset;
+  std::int32_t final_offset;
+};
+struct index_entry_t {
+  char buf[ANDROID_TIMEZONE_NAME_LENGTH];
+  std::int32_t start;
+  std::int32_t length;
+  std::int32_t unused; // Was raw GMT offset; always 0 since tzdata2014f (L).
+};
+#  endif // USE_OS_TZDB
+#endif // defined(ANDROID) || defined(__ANDROID__)
 
 #if defined(DATE_EMBED_TZ_DB)
 #  include "ianatzdb.h"
@@ -128,6 +145,9 @@
 // the current time zone. On Win32 windows.h provides a means to do it.
 // gcc/mingw supports unistd.h on Win32 but MSVC does not.
 
+#ifdef __ANDROID__
+#  define INSTALL .
+#endif
 #ifdef _WIN32
 #  ifdef WINAPI_FAMILY
 #    include <winapifamily.h>
@@ -180,9 +200,9 @@
 
 #ifdef _WIN32
 static CONSTDATA char folder_delimiter = '\\';
-#else   // !_WIN32
+#elif !defined(ANDROID) && !defined(__ANDROID__)
 static CONSTDATA char folder_delimiter = '/';
-#endif  // !_WIN32
+#endif  // !defined(WIN32) && !defined(ANDROID) && !defined(__ANDROID__)
 
 #if defined(__GNUC__) && __GNUC__ < 5
    // GCC 4.9 Bug 61489 Wrong warning with -Wmissing-field-initializers
@@ -193,20 +213,6 @@ static CONSTDATA char folder_delimiter = '/';
 #if !USE_OS_TZDB
 
 #  ifdef _WIN32
-#    ifndef WINRT
-
-namespace
-{
-    struct task_mem_deleter
-    {
-        void operator()(wchar_t buf[])
-        {
-            if (buf != nullptr)
-                CoTaskMemFree(buf);
-        }
-    };
-    using co_task_mem_ptr = std::unique_ptr<wchar_t[], task_mem_deleter>;
-}
 
 static
 std::wstring
@@ -235,6 +241,21 @@ convert_utf8_to_utf16(const std::string& s)
     }
 
     return out;
+}
+
+#    ifndef WINRT
+
+namespace
+{
+    struct task_mem_deleter
+    {
+        void operator()(wchar_t buf[])
+        {
+            if (buf != nullptr)
+                CoTaskMemFree(buf);
+        }
+    };
+    using co_task_mem_ptr = std::unique_ptr<wchar_t[], task_mem_deleter>;
 }
 
 // We might need to know certain locations even if not using the remote API,
@@ -374,7 +395,7 @@ private:
     {
 #  ifdef _WIN32
         std::wstring wfilename = convert_utf8_to_utf16(filename);
-        FILE* file = ::_wfopen(wfilename.c_str(), L"rb");
+        FILE* file = ::_wfopen(wfilename.c_str(), L"r");
 #  else // !_WIN32
         FILE* file = ::fopen(filename.c_str(), "rb");
 #  endif // _WIN32
@@ -479,7 +500,18 @@ discover_tz_dir()
 {
     struct stat sb;
     using namespace std;
-#  ifndef __APPLE__
+#  if defined(ANDROID) || defined(__ANDROID__)
+    CONSTDATA auto tz_dir_default = "/apex/com.android.tzdata/etc/tz";
+    CONSTDATA auto tz_dir_fallback = "/system/usr/share/zoneinfo";
+
+    // Check updatable path first
+    if(stat(tz_dir_default, &sb) == 0 && S_ISDIR(sb.st_mode))
+        return tz_dir_default;
+    else if(stat(tz_dir_fallback, &sb) == 0 && S_ISDIR(sb.st_mode))
+        return tz_dir_fallback;
+    else
+        throw runtime_error("discover_tz_dir failed to find zoneinfo\n");
+#  elif !defined(__APPLE__)
     CONSTDATA auto tz_dir_default = "/usr/share/zoneinfo";
     CONSTDATA auto tz_dir_buildroot = "/usr/share/zoneinfo/uclibc";
 
@@ -545,7 +577,9 @@ get_tz_dir()
 static_assert(min_year <= max_year, "Configuration error");
 #endif
 
+#if !defined(ANDROID) && !defined(__ANDROID__)
 static std::unique_ptr<tzdb> init_tzdb();
+#endif // !defined(ANDROID) && !defined(__ANDROID__)
 
 tzdb_list::~tzdb_list()
 {
@@ -604,6 +638,7 @@ get_tzdb_list()
     return tz_db;
 }
 
+#if !defined(ANDROID) && !defined(__ANDROID__)
 inline
 static
 char
@@ -632,15 +667,18 @@ get_alpha_word(std::istream& in)
         s.push_back(static_cast<char>(in.get()));
     return s;
 }
+#endif // !defined(ANDROID) && !defined(__ANDROID__)
 
 inline
 static
 bool
 is_prefix_of(std::string const& key, std::string const& value)
 {
-    return key.compare(0, key.size(), value, 0, key.size()) == 0;
+    const size_t size = std::min(key.size(), value.size());
+    return key.compare(0, size, value, 0, size) == 0;
 }
 
+#if !defined(ANDROID) && !defined(__ANDROID__)
 static
 unsigned
 parse_month(std::istream& in)
@@ -660,6 +698,7 @@ parse_month(std::istream& in)
         throw std::runtime_error("oops: bad month name: " + s);
     return static_cast<unsigned>(++m);
 }
+#endif // !defined(ANDROID) && !defined(__ANDROID__)
 
 #if !USE_OS_TZDB
 
@@ -2212,6 +2251,9 @@ time_zone::load_data(std::istream& inf,
 void
 time_zone::init_impl()
 {
+#if defined(ANDROID) || defined(__ANDROID__)
+    return;
+#endif // defined(ANDROID) || defined(__ANDROID__)
     using namespace std;
     using namespace std::chrono;
     auto name = get_tz_dir() + ('/' + name_);
@@ -2372,6 +2414,86 @@ time_zone::get_info_impl(local_seconds tp) const
     }
     return i;
 }
+
+#if defined(ANDROID) || defined(__ANDROID__)
+void
+time_zone::parse_from_android_tzdata(std::ifstream& inf, const std::size_t off)
+{
+    using namespace std;
+    using namespace std::chrono;
+    if (!inf.is_open())
+        throw std::runtime_error{"Unable to open tzdata"};
+    std::size_t restorepos = inf.tellg();
+    inf.seekg(off, inf.beg);
+    load_header(inf);
+    auto v = load_version(inf);
+    std::int32_t tzh_ttisgmtcnt, tzh_ttisstdcnt, tzh_leapcnt,
+                 tzh_timecnt,    tzh_typecnt,    tzh_charcnt;
+    skip_reserve(inf);
+    load_counts(inf, tzh_ttisgmtcnt, tzh_ttisstdcnt, tzh_leapcnt,
+                     tzh_timecnt,    tzh_typecnt,    tzh_charcnt);
+    if (v == 0)
+    {
+        load_data<int32_t>(inf, tzh_leapcnt, tzh_timecnt, tzh_typecnt, tzh_charcnt);
+    }
+    else
+    {
+#if !defined(NDEBUG)
+        inf.ignore((4+1)*tzh_timecnt + 6*tzh_typecnt + tzh_charcnt + 8*tzh_leapcnt +
+                   tzh_ttisstdcnt + tzh_ttisgmtcnt);
+        load_header(inf);
+        auto v2 = load_version(inf);
+        assert(v == v2);
+        skip_reserve(inf);
+#else  // defined(NDEBUG)
+        inf.ignore((4+1)*tzh_timecnt + 6*tzh_typecnt + tzh_charcnt + 8*tzh_leapcnt +
+                   tzh_ttisstdcnt + tzh_ttisgmtcnt + (4+1+15));
+#endif  // defined(NDEBUG)
+        load_counts(inf, tzh_ttisgmtcnt, tzh_ttisstdcnt, tzh_leapcnt,
+                         tzh_timecnt,    tzh_typecnt,    tzh_charcnt);
+        load_data<int64_t>(inf, tzh_leapcnt, tzh_timecnt, tzh_typecnt, tzh_charcnt);
+    }
+#if !MISSING_LEAP_SECONDS
+    if (tzh_leapcnt > 0)
+    {
+        auto& leap_seconds = get_tzdb_list().front().leap_seconds;
+        auto itr = leap_seconds.begin();
+        auto l = itr->date();
+        seconds leap_count{0};
+        for (auto t = std::upper_bound(transitions_.begin(), transitions_.end(), l,
+                                       [](const sys_seconds& x, const transition& ct)
+                                       {
+                                           return x < ct.timepoint;
+                                       });
+                  t != transitions_.end(); ++t)
+        {
+            while (t->timepoint >= l)
+            {
+                ++leap_count;
+                if (++itr == leap_seconds.end())
+                    l = sys_days(max_year/max_day);
+                else
+                    l = itr->date() + leap_count;
+            }
+            t->timepoint -= leap_count;
+        }
+    }
+#endif  // !MISSING_LEAP_SECONDS
+    auto b = transitions_.begin();
+    auto i = transitions_.end();
+    if (i != b)
+    {
+        for (--i; i != b; --i)
+        {
+            if (i->info->offset == i[-1].info->offset &&
+                i->info->abbrev == i[-1].info->abbrev &&
+                i->info->is_dst == i[-1].info->is_dst)
+                i = transitions_.erase(i);
+        }
+    }
+    inf.seekg(restorepos, inf.beg);
+}
+#endif // defined(ANDROID) || defined(__ANDROID__)
 
 std::ostream&
 operator<<(std::ostream& os, const time_zone& z)
@@ -2804,14 +2926,14 @@ operator<<(std::ostream& os, const leap_second& x)
 
 #if USE_OS_TZDB
 
+#if !defined(ANDROID) && !defined(__ANDROID__)
 static
 std::string
 get_version()
 {
-    using namespace std;
-    auto path = get_tz_dir() + string("/+VERSION");
-    ifstream in{path};
-    string version;
+    auto path = get_tz_dir() + std::string("/+VERSION");
+    std::ifstream in{path};
+    std::string version;
     if (in)
     {
         in >> version;
@@ -2908,6 +3030,7 @@ find_read_and_leap_seconds()
 #endif
     return {};
 }
+#endif // !defined(ANDROID) && !defined(__ANDROID__)
 
 static
 std::unique_ptr<tzdb>
@@ -2915,6 +3038,38 @@ init_tzdb()
 {
     std::unique_ptr<tzdb> db(new tzdb);
 
+#if defined(ANDROID) || defined(__ANDROID__)
+    auto path = get_tz_dir() + std::string("/tzdata");
+    std::ifstream in{path};
+    if (!in)
+        throw std::runtime_error("Can not open " + path);
+    bionic_tzdata_header_t hdr{};
+    in.read(reinterpret_cast<char*>(&hdr), sizeof(bionic_tzdata_header_t));
+    if (!is_prefix_of(hdr.tzdata_version, "tzdata") || hdr.tzdata_version[11] != 0)
+        throw std::runtime_error("Malformed tzdata - invalid magic!");
+    maybe_reverse_bytes(hdr.index_offset);
+    maybe_reverse_bytes(hdr.data_offset);
+    maybe_reverse_bytes(hdr.final_offset);
+    if (hdr.index_offset > hdr.data_offset)
+        throw std::runtime_error("Malformed tzdata - hdr.index_offset > hdr.data_offset!");
+    const size_t index_size = hdr.data_offset - hdr.index_offset;
+    if ((index_size % sizeof(index_entry_t)) != 0)
+        throw std::runtime_error("Malformed tzdata - index size malformed!");
+    //Iterate through zone index
+    index_entry_t index_entry{};
+    for (size_t idx = 0; idx < index_size; idx += sizeof(index_entry_t)) {
+        in.read(reinterpret_cast<char*>(&index_entry), sizeof(index_entry_t));
+        maybe_reverse_bytes(index_entry.start);
+        maybe_reverse_bytes(index_entry.length);
+        time_zone timezone{std::string(index_entry.buf),
+                           detail::undocumented{}};
+        timezone.parse_from_android_tzdata(in, hdr.data_offset + index_entry.start);
+        db->zones.emplace_back(std::move(timezone));
+    }
+    db->zones.shrink_to_fit();
+    std::sort(db->zones.begin(), db->zones.end());
+    db->version = std::string(hdr.tzdata_version).replace(0, 6, "");
+#else
     //Iterate through folders
     std::queue<std::string> subfolders;
     subfolders.emplace(get_tz_dir());
@@ -2967,6 +3122,7 @@ init_tzdb()
     std::sort(db->zones.begin(), db->zones.end());
     db->leap_seconds = find_read_and_leap_seconds();
     db->version = get_version();
+#endif // defined(ANDROID) || defined(__ANDROID__)
     return db;
 }
 
