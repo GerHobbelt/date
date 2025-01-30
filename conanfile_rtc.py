@@ -3,7 +3,7 @@ from conans import ConanFile
 
 class DateConan(ConanFile):
     name = "date"
-    version = "3.01"
+    version = "3.0.1"
     url = "https://github.com/Esri/date/tree/runtimecore"
     license = "https://github.com/Esri/date/blob/runtimecore/LICENSE.txt"
     description = "Howard Hinnant's TZDB parser."
