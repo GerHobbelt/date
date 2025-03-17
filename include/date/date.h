@@ -8126,14 +8126,14 @@ std::basic_istream<CharT, Traits>&
 operator>>(std::basic_istream<CharT, Traits>& is,
            const parse_manip<Parsable, CharT, Traits, Alloc>& x)
 {
-    return date::from_stream(is, x.format_.c_str(), x.tp_, x.abbrev_, x.offset_);
+    return from_stream(is, x.format_.c_str(), x.tp_, x.abbrev_, x.offset_);
 }
 
 template <class Parsable, class CharT, class Traits, class Alloc>
 inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp})
 {
@@ -8145,7 +8145,7 @@ inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp,
       std::basic_string<CharT, Traits, Alloc>& abbrev)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp, &abbrev),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev})
 {
@@ -8157,7 +8157,7 @@ inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp,
       std::chrono::minutes& offset)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp,
                             std::declval<std::basic_string<CharT, Traits, Alloc>*>(),
                             &offset),
@@ -8171,7 +8171,7 @@ inline
 auto
 parse(const std::basic_string<CharT, Traits, Alloc>& format, Parsable& tp,
       std::basic_string<CharT, Traits, Alloc>& abbrev, std::chrono::minutes& offset)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(),
                             format.c_str(), tp, &abbrev, &offset),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev, &offset})
 {
@@ -8184,7 +8184,7 @@ template <class Parsable, class CharT>
 inline
 auto
 parse(const CharT* format, Parsable& tp)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT>&>(), format, tp),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT>&>(), format, tp),
                 parse_manip<Parsable, CharT>{format, tp})
 {
     return {format, tp};
@@ -8194,7 +8194,7 @@ template <class Parsable, class CharT, class Traits, class Alloc>
 inline
 auto
 parse(const CharT* format, Parsable& tp, std::basic_string<CharT, Traits, Alloc>& abbrev)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
                             tp, &abbrev),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev})
 {
@@ -8205,7 +8205,7 @@ template <class Parsable, class CharT>
 inline
 auto
 parse(const CharT* format, Parsable& tp, std::chrono::minutes& offset)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT>&>(), format,
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT>&>(), format,
                             tp, std::declval<std::basic_string<CharT>*>(), &offset),
                 parse_manip<Parsable, CharT>{format, tp, nullptr, &offset})
 {
@@ -8217,7 +8217,7 @@ inline
 auto
 parse(const CharT* format, Parsable& tp,
       std::basic_string<CharT, Traits, Alloc>& abbrev, std::chrono::minutes& offset)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format,
                             tp, &abbrev, &offset),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev, &offset})
 {
@@ -8232,7 +8232,7 @@ template <class Parsable, class CharT, class Traits>
 inline
 auto
 parse(std::basic_string_view<CharT, Traits> format, Parsable& tp)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(), tp),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(), tp),
                 parse_manip<Parsable, CharT, Traits>{format, tp})
 {
     return {format, tp};
@@ -8243,7 +8243,7 @@ inline
 auto
 parse(std::basic_string_view<CharT, Traits> format,
       Parsable& tp, std::basic_string<CharT, Traits, Alloc>& abbrev)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(),
                             tp, &abbrev),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev})
 {
@@ -8254,7 +8254,7 @@ template <class Parsable, class CharT, class Traits>
 inline
 auto
 parse(std::basic_string_view<CharT, Traits> format, Parsable& tp, std::chrono::minutes& offset)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(),
                             tp, std::declval<std::basic_string<CharT, Traits>*>(), &offset),
                 parse_manip<Parsable, CharT, Traits>{format, tp, nullptr, &offset})
 {
@@ -8266,7 +8266,7 @@ inline
 auto
 parse(std::basic_string_view<CharT, Traits> format, Parsable& tp,
       std::basic_string<CharT, Traits, Alloc>& abbrev, std::chrono::minutes& offset)
-    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(),
+    -> decltype(from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(),
                             tp, &abbrev, &offset),
                 parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev, &offset})
 {
@@ -8380,6 +8380,57 @@ parse(const CharT* format, Parsable& tp,
 {
     return {format, tp, &abbrev, &offset};
 }
+
+#if HAS_STRING_VIEW
+
+// basic_string_view formats
+
+template <class Parsable, class CharT, class Traits>
+inline
+auto
+parse(std::basic_string_view<CharT, Traits> format, Parsable& tp)
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(), tp),
+                parse_manip<Parsable, CharT, Traits>{format, tp})
+{
+    return {format, tp};
+}
+
+template <class Parsable, class CharT, class Traits, class Alloc>
+inline
+auto
+parse(std::basic_string_view<CharT, Traits> format,
+      Parsable& tp, std::basic_string<CharT, Traits, Alloc>& abbrev)
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(),
+                            tp, &abbrev),
+                parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev})
+{
+    return {format, tp, &abbrev};
+}
+
+template <class Parsable, class CharT, class Traits>
+inline
+auto
+parse(std::basic_string_view<CharT, Traits> format, Parsable& tp, std::chrono::minutes& offset)
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(),
+                            tp, std::declval<std::basic_string<CharT, Traits>*>(), &offset),
+                parse_manip<Parsable, CharT, Traits>{format, tp, nullptr, &offset})
+{
+    return {format, tp, nullptr, &offset};
+}
+
+template <class Parsable, class CharT, class Traits, class Alloc>
+inline
+auto
+parse(std::basic_string_view<CharT, Traits> format, Parsable& tp,
+      std::basic_string<CharT, Traits, Alloc>& abbrev, std::chrono::minutes& offset)
+    -> decltype(date::from_stream(std::declval<std::basic_istream<CharT, Traits>&>(), format.data(),
+                            tp, &abbrev, &offset),
+                parse_manip<Parsable, CharT, Traits, Alloc>{format, tp, &abbrev, &offset})
+{
+    return {format, tp, &abbrev, &offset};
+}
+
+#endif  // HAS_STRING_VIEW
 
 #endif  // !defined _MSC_VER
 
