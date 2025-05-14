@@ -6,7 +6,9 @@ include( CMakeFindDependencyMacro )
 # The target battzdata::battzdata must exists anyway because the generated 
 # dateTargets.cmake  will reference it as dependency.
 # So lets create a dummy:
-add_library( battzdata::battzdata INTERFACE IMPORTED)
+if (NOT TARGET battzdata::battzdata)
+  add_library( battzdata::battzdata INTERFACE IMPORTED)
+endif()
 
 include( "${CMAKE_CURRENT_LIST_DIR}/dateTargets.cmake" )
 
