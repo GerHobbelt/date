@@ -40,6 +40,20 @@ option( COMPILE_WITH_C_LOCALE "define ONLY_C_LOCALE=1" OFF )
 option( BUILD_TZ_LIB "build/install of TZ library" OFF )
 option( ENABLE_DATE_INSTALL "Enable install" ON )
 
+option(BARCO_USE_BATTZDATA_PACKAGE "Use the installed battzdata package from https://git.barco.com/projects/BAT/repos/3rd_tzdata/" OFF )
+set (BARCO_TZ_DATA_DEST_FOLDER "" CACHE PATH "Folder which contains tzdata folder. Use -D BARCO_TZ_DATA_DEST_FOLDER:PATH=. to use current work dir." )
+
+if(BARCO_USE_BATTZDATA_PACKAGE)
+    set (BUILD_TZ_LIB     ON  CACHE BOOL "" FORCE)
+    set (MANUAL_TZ_DB     ON  CACHE BOOL "" FORCE)
+    set (USE_SYSTEM_TZ_DB OFF CACHE BOOL "" FORCE)
+endif()
+if (NOT BARCO_TZ_DATA_DEST_FOLDER STREQUAL "")
+    set (BUILD_TZ_LIB     ON  CACHE BOOL "" FORCE)
+    set (MANUAL_TZ_DB     ON  CACHE BOOL "" FORCE)
+    set (USE_SYSTEM_TZ_DB OFF CACHE BOOL "" FORCE)
+endif()
+
 if( ENABLE_DATE_TESTING AND NOT BUILD_TZ_LIB )
     message(WARNING "Testing requested, but BUILD_TZ_LIB not ON - forcing the latter")
     set (BUILD_TZ_LIB ON CACHE BOOL "required for testing" FORCE)
@@ -58,11 +72,15 @@ function( print_option OPT )
 endfunction( )
 
 print_option( USE_SYSTEM_TZ_DB )
+print_option( BARCO_USE_BATTZDATA_PACKAGE )
+print_option( BARCO_TZ_DATA_DEST_FOLDER )
 print_option( MANUAL_TZ_DB )
 print_option( USE_TZ_DB_IN_DOT )
 print_option( BUILD_SHARED_LIBS  )
 print_option( ENABLE_DATE_TESTING )
 print_option( DISABLE_STRING_VIEW )
+print_option( COMPILE_WITH_C_LOCALE )
+print_option( BUILD_TZ_LIB )
 
 #[===================================================================[
    date (header only) library
@@ -176,20 +194,25 @@ if( BUILD_TZ_LIB )
         target_link_libraries( date-tz PRIVATE ${CURL_LIBRARIES} )
     endif( )
     # Barco audio adaption start
-    if( MANUAL_TZ_DB )
-        find_package( BatTzdata )
-        if (TARGET battzdata::battzdata)
-            message(STATUS "Using install path of battzdata::battzdata ")
-            # Imports INSTALL= define
+    set(targetCppDefines "")
+    if( NOT BARCO_TZ_DATA_DEST_FOLDER STREQUAL "")
+        target_compile_definitions( date-tz PRIVATE INSTALL=${BARCO_TZ_DATA_DEST_FOLDER} )
+    else()
+        if (BARCO_USE_BATTZDATA_PACKAGE)
+            find_package( BatTzdata REQUIRED)
+            message(STATUS "date-tz: Using install path of battzdata::battzdata ")
+            # Imports INSTALL= define from battzdata::battzdata which is set to the install location of tzdata.
             target_link_libraries( date-tz PRIVATE battzdata::battzdata) 
-            # Lets provide some infos to downstream targets
-            target_compile_definitions( date-tz PUBLIC USE_BAT_TZDATA=1 )
-        else()
-          message(STATUS "BatTzdata not found,")
+            get_target_property(tmpVar battzdata::battzdata "INTERFACE_COMPILE_DEFINITIONS")
+            list(APPEND targetCppDefines ${tmpVar})
         endif()
-    endif( )
+    endif()
+    get_target_property(tmpVar  date-tz "INTERFACE_COMPILE_DEFINITIONS")
+    list(APPEND targetCppDefines ${tmpVar})
+    get_target_property(tmpVar  date-tz "COMPILE_DEFINITIONS")
+    list(APPEND targetCppDefines ${tmpVar})
+    message(STATUS "date-tz: Build with following C++ defines: (look for INSTALL=): ${targetCppDefines}")
     # Barco audio adaption end
-
 endif( )
 
 #[===================================================================[
