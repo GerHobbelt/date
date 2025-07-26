@@ -15,7 +15,7 @@
 
 #]===================================================================]
 
-cmake_minimum_required( VERSION 3.7 )
+cmake_minimum_required( VERSION 3.8 )
 
 project( date VERSION 3.0.4 )
 set(ABI_VERSION 3) # used as SOVERSION, increment when ABI changes
@@ -104,6 +104,7 @@ set(TARGET_HEADERS
     include/date/iso_week.h
     include/date/julian.h
 )
+target_compile_features( date INTERFACE cxx_std_11 )
 
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.15)
     # public headers will get installed:
