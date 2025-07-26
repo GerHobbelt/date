@@ -202,7 +202,7 @@ struct index_entry_t {
 static CONSTDATA char folder_delimiter = '\\';
 #elif !defined(ANDROID) && !defined(__ANDROID__)
 static CONSTDATA char folder_delimiter = '/';
-#endif  // !defined(WIN32) && !defined(ANDROID) && !defined(__ANDROID__)
+#endif  // !defined(_WIN32) && !defined(ANDROID) && !defined(__ANDROID__)
 
 #if defined(__GNUC__) && __GNUC__ < 5
    // GCC 4.9 Bug 61489 Wrong warning with -Wmissing-field-initializers
