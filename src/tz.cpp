@@ -3794,7 +3794,7 @@ init_tzdb()
     bool continue_zone = false;
     std::unique_ptr<tzdb> db(new tzdb);
 
-#if DATE_EMBED_TZ_DB
+#if defined(DATE_EMBED_TZ_DB)
     db->version = "2019c";
 #elif AUTO_DOWNLOAD
     if (!file_exists(install))
@@ -3923,7 +3923,10 @@ init_tzdb()
     std::sort(db->leap_seconds.begin(), db->leap_seconds.end());
     db->leap_seconds.shrink_to_fit();
 
+#if defined(DATE_EMBED_TZ_DB)
     auto const res = ianatzdb::get_resource("abc");
+#endif
+	
 #ifdef _WIN32
     std::string mapping_file = get_install() + folder_delimiter + "windowsZones.xml";
     db->mappings = load_timezone_mappings_from_xml_file(mapping_file);
