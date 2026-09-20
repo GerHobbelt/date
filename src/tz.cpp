@@ -3290,7 +3290,7 @@ remote_version()
     std::string str;
     if (download_to_string("https://www.iana.org/time-zones", str))
     {
-        CONSTDATA char db[] = "/time-zones/releases/tzdata";
+        CONSTDATA char db[] = "/time-zones/releases/";
         CONSTDATA auto db_size = sizeof(db) - 1;
         auto p = str.find(db, 0, db_size);
         const int ver_str_len = 5;
@@ -3337,7 +3337,7 @@ remove_folder_and_subfolders(const std::string& folder)
 #    endif  // !USE_SHELL_API
 #  else   // !_WIN32
 #    if USE_SHELL_API
-    return std::system(("rm -R " + folder).c_str()) == EXIT_SUCCESS;
+    return std::system(("rm -R \"" + folder + "\"").c_str()) == EXIT_SUCCESS;
 #    else // !USE_SHELL_API
     struct dir_deleter {
         dir_deleter() {}
@@ -3403,7 +3403,7 @@ make_directory(const std::string& folder)
 #    endif // !USE_SHELL_API
 #  else  // !_WIN32
 #    if USE_SHELL_API
-    return std::system(("mkdir -p " + folder).c_str()) == EXIT_SUCCESS;
+    return std::system(("mkdir -p \"" + folder + "\"").c_str()) == EXIT_SUCCESS;
 #    else  // !USE_SHELL_API
     return mkdir(folder.c_str(), 0777) == 0;
 #    endif  // !USE_SHELL_API
@@ -3425,7 +3425,7 @@ delete_file(const std::string& file)
 #    endif // !USE_SHELL_API
 #  else  // !_WIN32
 #    if USE_SHELL_API
-    return std::system(("rm " + file).c_str()) == EXIT_SUCCESS;
+    return std::system(("rm \"" + file + "\"").c_str()) == EXIT_SUCCESS;
 #    else // !USE_SHELL_API
     return unlink(file.c_str()) == 0;
 #    endif // !USE_SHELL_API
@@ -3660,7 +3660,7 @@ bool
 extract_gz_file(const std::string&, const std::string& gz_file, const std::string&)
 {
 #    if USE_SHELL_API
-    bool unzipped = std::system(("tar -xzf " + gz_file + " -C " + get_install()).c_str()) == EXIT_SUCCESS;
+    bool unzipped = std::system(("tar -xzf \"" + gz_file + "\" -C \"" + get_install() + "\"").c_str()) == EXIT_SUCCESS;
 #    else  // !USE_SHELL_API
     const char prog[] = {"/usr/bin/tar"};
     const char*const args[] =

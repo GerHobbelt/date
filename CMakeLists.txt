@@ -17,7 +17,7 @@
 
 cmake_minimum_required( VERSION 3.8 )
 
-project( date VERSION 3.0.4 )
+project( date VERSION 3.0.5 )
 set(ABI_VERSION 3) # used as SOVERSION, increment when ABI changes
 
 get_directory_property( has_parent PARENT_DIRECTORY )
@@ -127,9 +127,7 @@ else()
   target_compile_definitions( date INTERFACE ONLY_C_LOCALE=0 )
 endif()
 if ( DISABLE_STRING_VIEW )
-  target_compile_definitions( date INTERFACE HAS_STRING_VIEW=0 -DHAS_DEDUCTION_GUIDES=0 )
-else()
-  target_compile_definitions( date INTERFACE HAS_STRING_VIEW=1 )
+  target_compile_definitions( date INTERFACE HAS_STRING_VIEW=0 HAS_DEDUCTION_GUIDES=0 )
 endif()
 
 #[===================================================================[
